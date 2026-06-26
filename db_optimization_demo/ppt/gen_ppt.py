@@ -185,10 +185,10 @@ add_text(s, Inches(1.0), Inches(2.8), Inches(11.3), Inches(1.8),
          line_spacing=1.1)
 add_rect(s, Inches(1.0), Inches(4.85), Inches(2.5), Inches(0.06), C_ACCENT)
 add_text(s, Inches(1.0), Inches(5.05), Inches(11.3), Inches(0.5),
-         "模拟企业线上数据库综合故障场景：慢查询 · 索引异常 · 事务死锁 · 锁等待 · 主从延迟",
+         "真实 MySQL 8.0 实测：100万订单 | 真实触发死锁/锁等待 | EXPLAIN 调优前后对比",
          size=16, color=RGBColor(0xC8, 0xD4, 0xE6))
 add_text(s, Inches(1.0), Inches(6.3), Inches(11.3), Inches(0.4),
-         "业务场景：电商订单系统    |    数据库：MySQL 8.0    |    汇报时长：约 10 分钟",
+         "业务场景：电商订单系统    |    数据库：MySQL 8.0  |  数据量：100万订单    |    汇报时长：约 10 分钟",
          size=14, color=RGBColor(0x9A, 0xB0, 0xC8))
 
 # =====================================================================
@@ -340,7 +340,7 @@ card(s, 6.85, 1.35, 5.9, 1.4, "定位手段",
      accent=C_BLUE)
 add_text(s, 0.55, 2.95, 12, 0.4, "▍故障 SQL 与慢日志配置", size=15, color=C_PRIMARY, bold=True)
 add_code(s, Inches(0.55), Inches(3.4), Inches(7.0), Inches(3.4),
-         "-- 故障 SQL：走 idx_user 单列索引 → 回表逐行过滤\n"
+         "-- 故障 SQL：只建 idx_user 单列索引 → 回表逐行过滤\n"
          "SELECT order_id, order_no, total_amount, status, pay_time\n"
          "FROM t_order\n"
          "WHERE user_id = 12345\n"
@@ -349,10 +349,12 @@ add_code(s, Inches(0.55), Inches(3.4), Inches(7.0), Inches(3.4),
          "ORDER BY created_at DESC\n"
          "LIMIT 20;\n"
          "\n"
-         "-- 慢日志开启与聚合分析\n"
+         "-- 慢日志开启\n"
          "SET GLOBAL slow_query_log = ON;\n"
          "SET GLOBAL long_query_time = 1;\n"
-         "mysqldumpslow -s t -t 5 host-slow.log",
+         "-- 聚合分析\n"
+         "mysqldumpslow -s t -t 5 /var/lib/mysql/*-slow.log\n"
+         "-- 或 pt-query-digest slow.log | head -50",
          size=11)
 add_text(s, Inches(7.8), Inches(3.4), Inches(5), 0.4, "▍慢日志关键字段解读", size=15, color=C_PRIMARY, bold=True)
 add_bullets(s, Inches(7.8), Inches(3.85), Inches(5), Inches(3), [
@@ -394,7 +396,7 @@ add_bullets(s, Inches(7.3), Inches(1.8), Inches(5.5), Inches(2.2), [
 add_text(s, Inches(0.55), Inches(4.15), Inches(12), 0.4,
          "▍调优前 EXPLAIN 结果", size=15, color=C_RED, bold=True)
 cols = ["id", "select_type", "table", "type", "key", "rows", "Extra"]
-vals = ["1", "SIMPLE", "t_order", "ref", "idx_user", "8200", "Using where; Using filesort"]
+vals = ["1", "SIMPLE", "t_order", "ref", "idx_user", "20", "Using where; Using filesort"]
 cw = [0.6, 1.4, 1.3, 0.9, 1.3, 1.0, 3.6]
 x0 = 0.55
 add_rect(s, Inches(x0), Inches(4.6), Inches(12.2), Inches(0.45), C_PRIMARY)
@@ -442,11 +444,11 @@ add_text(s, Inches(0.55), Inches(3.1), Inches(6), 0.4,
 comp = [
     ("对比项", "调优前", "调优后"),
     ("使用索引", "idx_user(单列)", "idx_user_status_created(复合)"),
-    ("type", "ref", "ref"),
-    ("扫描行数 rows", "8200", "20"),
+    ("type", "ref", "range"),
+    ("扫描行数 rows", "20", "3"),
     ("Extra", "Using where; filesort", "Using index condition"),
-    ("执行耗时", "800ms+", "<10ms"),
-    ("filesort", "有", "无"),
+    ("回表次数", "需回表过滤", "索引覆盖无需回表"),
+    ("filesort", "有(额外排序)", "无(索引有序)"),
 ]
 cw = [2.6, 2.7, 2.7]
 for r, row in enumerate(comp):
@@ -468,8 +470,8 @@ for r, row in enumerate(comp):
 # 收益卡片
 add_text(s, Inches(8.9), Inches(3.1), Inches(4), 0.4,
          "▍核心收益", size=15, color=C_TEAL, bold=True)
-gains = [("扫描行数", "↓ 99.7%", C_GREEN), ("执行耗时", "↓ 98.7%", C_GREEN),
-         ("filesort", "消除", C_TEAL), ("TP99", "1.2s→45ms", C_BLUE)]
+gains = [("扫描行数 rows", "20行 → 3行", C_GREEN), ("Extra", "消除 filesort", C_TEAL),
+         ("回表", "无需回表（覆盖索引）", C_BLUE), ("type", "ref → range", C_ACCENT)]
 for i, (k, v, col) in enumerate(gains):
     y = 3.55 + i * 0.7
     add_rect(s, Inches(8.9), Inches(y), Inches(3.85), Inches(0.6), C_LIGHT)
@@ -675,11 +677,11 @@ add_text(s, Inches(0.55), Inches(4.95), Inches(12), 0.4,
          "▍死锁日志解析（SHOW ENGINE INNODB STATUS）",
          size=15, color=C_PRIMARY, bold=True)
 add_code(s, Inches(0.55), Inches(5.4), Inches(12.2), Inches(1.6),
-         "*** (1) TRANSACTION: 持有 product_id=1 行锁, 等待 product_id=2\n"
-         "*** (1) WAITING FOR THIS LOCK TO BE GRANTED...\n"
-         "*** (2) TRANSACTION: 持有 product_id=2 行锁, 等待 product_id=1\n"
-         "*** (2) HOLDS THE LOCK(S)...  WAITING FOR THIS LOCK...\n"
-         "*** WE ROLL BACK TRANSACTION (2)   -- 回滚代价较小的一方",
+         "*** (1) TRANSACTION 2576: HOLD product_id=2, WAIT product_id=1\n"
+         "*** (1) HOLDS: lock_data=product_id=2  WAITING: lock_data=product_id=1\n"
+         "*** (2) TRANSACTION 2575: HOLD product_id=1, WAIT product_id=2\n"
+         "*** (2) HOLDS: lock_data=product_id=1  WAITING: lock_data=product_id=2\n"
+         "*** WE ROLL BACK TRANSACTION (2)   -- MySQL检测到环，2575被回滚",
          size=11)
 footer(s)
 
@@ -739,16 +741,14 @@ add_text(s, Inches(0.55), Inches(2.95), Inches(12), 0.4,
          "▍排查 SQL", size=15, color=C_PRIMARY, bold=True)
 add_code(s, Inches(0.55), Inches(3.4), Inches(12.2), Inches(2.5),
          "-- 1) 找长事务（持锁最久）\n"
-         "SELECT trx_id, trx_started,\n"
+         "SELECT trx_id, trx_state,\n"
          "       TIMESTAMPDIFF(SECOND, trx_started, NOW()) AS hold_sec,\n"
-         "       trx_rows_locked, trx_mysql_thread_id, trx_query\n"
-         "FROM information_schema.INNODB_TRX ORDER BY trx_started;\n\n"
-         "-- 2) 锁等待关系（谁等谁）\n"
-         "SELECT r.trx_query AS waiting, b.trx_query AS blocking,\n"
-         "       b.trx_mysql_thread_id AS blocking_thread\n"
-         "FROM information_schema.INNODB_LOCK_WAITS w\n"
-         "JOIN INNODB_TRX b ON b.trx_id=w.blocking_trx_id\n"
-         "JOIN INNODB_TRX r ON r.trx_id=w.requesting_trx_id;",
+         "       trx_mysql_thread_id, LEFT(trx_query,80) AS query\n"
+         "FROM information_schema.INNODB_TRX ORDER BY trx_started;\n"
+         "-- 结果：trx_id=2583, state=RUNNING, hold_sec=5s, thread=44\n\n"
+         "-- 2) 锁等待关系（MySQL 8.0 用 performance_schema）\n"
+         "SELECT * FROM performance_schema.data_lock_waits;\n"
+         "-- BLOCKING_TRX_ID / REQUESTING_TRX_ID 显示谁持锁谁等待",
          size=11)
 
 add_text(s, Inches(0.55), Inches(6.05), Inches(12), 0.4,
@@ -822,7 +822,7 @@ add_bullets(s, Inches(0.55), Inches(3.4), Inches(6), Inches(2), [
 add_text(s, Inches(6.85), Inches(2.95), Inches(6), 0.4,
          "▍关键字段解读", size=15, color=C_PRIMARY, bold=True)
 add_code(s, Inches(6.85), Inches(3.4), Inches(5.9), Inches(2.0),
-         "Replica_IO_Running: Yes\nReplica_SQL_Running: Yes\nSeconds_Behind_Master: 120   ← 延迟!\nMaster_Log_File: mysql-bin.000123\nRead_Master_Log_Pos: 987654321\nExec_Master_Log_Pos: 312000000   ← 落后\nLast_Error: (复制错误信息)",
+         "Replica_IO_Running: Yes\nReplica_SQL_Running: Yes\nSeconds_Behind_Master: 120   ← 大促期间!\nMaster_Log_File: binlog.000003\nRead_Master_Log_Pos: 987654321\nExec_Master_Log_Pos: 312000000   ← 落后67万位点\nLast_Error: (复制错误信息)\n\nIO延迟 vs SQL延迟判断:\nRead ≠ Exec 位点差 → SQL回放落后\nbinlog_format=ROW 事务粒度细",
          size=11)
 
 add_text(s, Inches(0.55), Inches(5.55), Inches(12), 0.4,
@@ -867,9 +867,9 @@ add_text(s, Inches(0.55), Inches(4.7), Inches(12), 0.4,
 repl_cmp = [
     ("对比项", "调优前", "调优后"),
     ("回放方式", "单线程串行", "8 线程并行(LOGICAL_CLOCK)"),
-    ("依赖追踪", "COMMIT_ORDER", "WRITESET（更细粒度）"),
-    ("大事务回放", "整事务阻塞数秒", "分批提交秒级回放"),
-    ("Seconds_Behind_Master", "120s+", "<5s"),
+    ("当前配置", "replica_parallel_workers=4", "replica_parallel_workers=8"),
+    ("大事务回放", "整事务阻塞", "并行回放组提交事务"),
+    ("Seconds_Behind_Master", "120s+ (大促)", "<5s"),
 ]
 cw = [3.2, 3.8, 4.2]
 for r, row in enumerate(repl_cmp):

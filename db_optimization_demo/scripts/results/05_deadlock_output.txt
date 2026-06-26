@@ -1,0 +1,94 @@
+=================================================================
+  死锁并发演示（AB-BA 循环等待）
+=================================================================
+  库存重置: product_id=1,2 = 1000
+
+  时序设计:
+  会话A: BEGIN → UPDATE product_id=1(🔒) → [屏障] → UPDATE product_id=2(等🔒)
+  会话B: BEGIN → UPDATE product_id=2(🔒) → [屏障] → UPDATE product_id=1(等🔒)
+           ↓                    ↓
+         A持1等2              B持2等1
+           ←────────死锁环────────→
+
+▶ 启动并发死锁模拟...
+
+=================================================================
+  线程执行结果
+=================================================================
+  🔒 A_locked_1: 🔒 锁定 product_id=1
+  💥 A_step2: 💥 死锁! (1213, 'Deadlock found when trying to get lock; try restarting transaction')
+  🔒 B_locked_1: 🔒 锁定 product_id=1
+  🔒 B_locked_2: 🔒 锁定 product_id=2
+
+=================================================================
+  死锁日志（SHOW ENGINE INNODB STATUS）
+=================================================================
+  LATEST DETECTED DEADLOCK
+  ------------------------
+  2026-06-26 11:03:00 140339868333760
+  *** (1) TRANSACTION:
+  TRANSACTION 2576, ACTIVE 0 sec starting index read
+  mysql tables in use 1, locked 1
+  LOCK WAIT 3 lock struct(s), heap size 1128, 2 row lock(s), undo log entries 1
+  MySQL thread id 38, OS thread handle 140339937597120, query id 198 localhost root updating
+  UPDATE t_product SET stock=stock-1 WHERE product_id=1
+  *** (1) HOLDS THE LOCK(S):
+  RECORD LOCKS space id 3 page no 6 n bits 328 index PRIMARY of table `shop_demo`.`t_product` trx id 2576 lock_mode X locks rec but not gap
+  Record lock, heap no 3 PHYSICAL RECORD: n_fields 9; compact format; info bits 0
+  0: len 8; hex 8000000000000002; asc         ;;
+  1: len 6; hex 000000000a10; asc       ;;
+  2: len 7; hex 01000001390151; asc     9 Q;;
+  3: len 13; hex e59586e593812d303030303031; asc       -000001;;
+  4: len 4; hex 80000002; asc     ;;
+  5: len 5; hex 8000000b01; asc      ;;
+  6: len 4; hex 800003e7; asc     ;;
+  7: len 1; hex 81; asc  ;;
+  8: len 5; hex 99ba34ae10; asc   4  ;;
+  *** (1) WAITING FOR THIS LOCK TO BE GRANTED:
+  RECORD LOCKS space id 3 page no 6 n bits 328 index PRIMARY of table `shop_demo`.`t_product` trx id 2576 lock_mode X locks rec but not gap waiting
+  Record lock, heap no 2 PHYSICAL RECORD: n_fields 9; compact format; info bits 0
+  0: len 8; hex 8000000000000001; asc         ;;
+  1: len 6; hex 000000000a0f; asc       ;;
+  2: len 7; hex 020000011803a2; asc        ;;
+  3: len 13; hex e59586e593812d303030303030; asc       -000000;;
+  4: len 4; hex 80000001; asc     ;;
+  5: len 5; hex 8000000a00; asc      ;;
+  6: len 4; hex 800003e7; asc     ;;
+  7: len 1; hex 80; asc  ;;
+  8: len 5; hex 99ba34ae10; asc   4  ;;
+  *** (2) TRANSACTION:
+  TRANSACTION 2575, ACTIVE 0 sec starting index read
+  mysql tables in use 1, locked 1
+  LOCK WAIT 3 lock struct(s), heap size 1128, 2 row lock(s), undo log entries 1
+  MySQL thread id 39, OS thread handle 140339938653888, query id 199 localhost root updating
+  UPDATE t_product SET stock=stock-1 WHERE product_id=2
+  *** (2) HOLDS THE LOCK(S):
+  RECORD LOCKS space id 3 page no 6 n bits 328 index PRIMARY of table `shop_demo`.`t_product` trx id 2575 lock_mode X locks rec but not gap
+  Record lock, heap no 2 PHYSICAL RECORD: n_fields 9; compact format; info bits 0
+  0: len 8; hex 8000000000000001; asc         ;;
+  1: len 6; hex 000000000a0f; asc       ;;
+  2: len 7; hex 020000011803a2; asc        ;;
+  3: len 13; hex e59586e593812d303030303030; asc       -000000;;
+  4: len 4; hex 80000001; asc     ;;
+  5: len 5; hex 8000000a00; asc      ;;
+  6: len 4; hex 800003e7; asc     ;;
+  7: len 1; hex 80; asc  ;;
+  8: len 5; hex 99ba34ae10; asc   4  ;;
+  *** (2) WAITING FOR THIS LOCK TO BE GRANTED:
+  RECORD LOCKS space id 3 page no 6 n bits 328 index PRIMARY of table `shop_demo`.`t_product` trx id 2575 lock_mode X locks rec but not gap waiting
+  Record lock, heap no 3 PHYSICAL RECORD: n_fields 9; compact format; info bits 0
+  0: len 8; hex 8000000000000002; asc         ;;
+  1: len 6; hex 000000000a10; asc       ;;
+  2: len 7; hex 01000001390151; asc     9 Q;;
+  3: len 13; hex e59586e593812d303030303031; asc       -000001;;
+  4: len 4; hex 80000002; asc     ;;
+  5: len 5; hex 8000000b01; asc      ;;
+  6: len 4; hex 800003e7; asc     ;;
+  7: len 1; hex 81; asc  ;;
+  8: len 5; hex 99ba34ae10; asc   4  ;;
+  *** WE ROLL BACK TRANSACTION (2)
+
+=================================================================
+  ✅ 死锁成功触发！一方会话被回滚。
+     错误码: [A] (1213, 'Deadlock found when trying to get lock; try restarting transaction')
+=================================================================

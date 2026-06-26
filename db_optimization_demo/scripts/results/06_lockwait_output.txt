@@ -1,0 +1,28 @@
+/workspace/db_optimization_demo/scripts/06_lock_wait_run.py:50: DeprecationWarning: 'db' is deprecated, use 'database'
+  init_env()
+=================================================================
+  锁等待演示
+=================================================================
+  innodb_lock_wait_timeout = 5s
+  商品1 价格重置为 99.0
+
+  [会话A] BEGIN + UPDATE product_id=1 (持锁，不提交)
+  [会话A] 已锁定 product_id=1，模拟批量改价中...（长事务持锁）
+  [会话B] BEGIN + UPDATE product_id=1...
+  [会话B] UPDATE product_id=1 → 等待锁...
+  [会话B] 💥 ERROR 1205 Lock wait timeout! 耗时 5.0s
+         (1205, 'Lock wait timeout exceeded; try restarting transaction')
+
+=================================================================
+  排查：INNODB_TRX 找持锁长事务
+=================================================================
+    trx_id      state hold_sec thread  query
+      2583    RUNNING        5s     44  None
+
+=================================================================
+  排查：INNODB_LOCK_WAITS 谁等谁
+=================================================================
+  (1109, "Unknown table 'INNODB_LOCK_WAITS' in information_schema")
+
+  ✅ 清理完成，锁已释放
+=================================================================
