@@ -8,7 +8,7 @@ import threading
 import time
 
 conn_params = {
-    'host': 'localhost', 'user': 'root', 'db': 'shop_demo',
+    'host': 'localhost', 'user': 'root', 'password': 'root123', 'db': 'shop_demo',
     'autocommit': False, 'charset': 'utf8mb4',
     'unix_socket': '/var/run/mysqld/mysqld.sock'
 }

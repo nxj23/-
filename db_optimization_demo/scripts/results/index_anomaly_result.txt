@@ -1,0 +1,7 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
++------------------------------------------------+
+| info                                           |
++------------------------------------------------+
+| ========== 0. 补建演示用索引 ==========        |
++------------------------------------------------+
+ERROR 1061 (42000) at line 6: Duplicate key name 'uk_order_no'
