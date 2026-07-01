@@ -205,12 +205,12 @@ items = [
     ("05", "事务死锁排查与调优", "AB-BA 死锁 + 统一加锁", C_RED),
     ("06", "锁等待排查与调优", "长事务持锁 + 乐观锁", C_BLUE),
     ("07", "主从延迟排查与调优", "多线程并行复制", C_ACCENT),
-    ("08", "综合调优成果与总结", "效果对比 + 经验沉淀", C_TEAL),
+    ("08-09", "综合调优成果 + 闭环", "效果对比 + 经验沉淀", C_TEAL),
 ]
 y0 = 1.5
 for i, (no, t, d, col) in enumerate(items):
     row = i // 2; coln = i % 2
-    x = Inches(0.8 + coln * 6.1); y = Inches(y0 + row * 1.35)
+    x = Inches(0.8 + coln * 6.1); y = Inches(y0 + row * 1.55)
     add_rect(s, x, y, Inches(5.6), Inches(1.15), C_LIGHT)
     add_rect(s, x, y, Inches(1.0), Inches(1.15), col)
     add_text(s, x, y, Inches(1.0), Inches(1.15), no, size=30, color=C_WHITE,
@@ -262,7 +262,7 @@ tables = [
     ("t_inventory_log 库存日志", "id, product_id, delta, order_no"),
 ]
 for i, (t, cols) in enumerate(tables):
-    y = 3.75 + i * 0.4
+    y = 3.75 + i * 0.48
     add_rect(s, Inches(0.55), Inches(y), Inches(2.6), Inches(0.35),
              C_PRIMARY if i % 2 == 0 else C_TEAL)
     add_text(s, Inches(0.65), Inches(y + 0.04), Inches(2.5), Inches(0.3),
@@ -278,7 +278,7 @@ faults = ["慢查询：大表缺复合索引", "索引异常：6 类索引失效
           "事务死锁：并发扣库存", "锁等待：长事务持锁",
           "主从延迟：大促写入洪峰"]
 for i, f in enumerate(faults):
-    y = 3.75 + i * 0.4
+    y = 3.75 + i * 0.48
     chip(s, Inches(9.5), Inches(y), Inches(3.5), Inches(0.35), f,
          fg=C_DARK, bg=C_LIGHT if i % 2 == 0 else RGBColor(0xFB, 0xEC, 0xD2), size=11)
 footer(s)
@@ -310,7 +310,7 @@ for i, ht in enumerate(heads):
              size=13, color=C_WHITE, bold=True, align=PP_ALIGN.CENTER,
              anchor=MSO_ANCHOR.MIDDLE)
 for i, (name, kw, sym, opt, eff, col) in enumerate(overview):
-    y = y0 + 0.5 + i * 1.02
+    y = y0 + 0.5 + i * 1.15
     add_rect(s, Inches(0.55), Inches(y), Inches(12.3), Inches(0.95),
              C_LIGHT if i % 2 == 0 else C_WHITE)
     add_rect(s, Inches(0.55), Inches(y), Inches(0.08), Inches(0.95), col)
@@ -447,12 +447,11 @@ comp = [
     ("type", "ref", "range"),
     ("扫描行数 rows", "20", "3"),
     ("Extra", "Using where; filesort", "Using index condition"),
-    ("回表次数", "需回表过滤", "索引覆盖无需回表"),
-    ("filesort", "有(额外排序)", "无(索引有序)"),
+    ("排序", "filesort 额外排序", "索引有序 无需排序"),
 ]
 cw = [2.6, 2.7, 2.7]
 for r, row in enumerate(comp):
-    y = 3.55 + r * 0.42
+    y = 3.55 + r * 0.52
     bg = C_PRIMARY if r == 0 else (C_LIGHT if r % 2 == 1 else C_WHITE)
     fg = C_WHITE if r == 0 else C_DARK
     add_rect(s, Inches(0.55), Inches(y), Inches(8.0), Inches(0.4), bg)
@@ -545,7 +544,7 @@ cases = [
 ]
 for i, (t, bad, good) in enumerate(cases):
     row = i // 2; coln = i % 2
-    x = 0.55 + coln * 6.25; y = 1.85 + row * 1.25
+    x = 0.55 + coln * 6.25; y = 1.85 + row * 1.35
     add_rect(s, Inches(x), Inches(y), Inches(6.0), Inches(1.1), C_LIGHT)
     add_rect(s, Inches(x), Inches(y), Inches(0.08), Inches(1.1), C_ACCENT)
     add_text(s, Inches(x + 0.2), Inches(y + 0.08), Inches(5.7), Inches(0.35),
@@ -658,7 +657,7 @@ timeline = [
     ("t4", "", "UPDATE ... WHERE product_id=1;", "死锁！B被回滚"),
 ]
 for i, (t, a, ad, b) in enumerate(timeline):
-    y = 2.2 + i * 0.65
+    y = 2.2 + i * 0.80
     add_rect(s, Inches(0.55), Inches(y), Inches(0.5), Inches(0.55), C_PRIMARY)
     add_text(s, Inches(0.55), Inches(y), Inches(0.5), Inches(0.55), t,
              size=12, color=C_WHITE, bold=True, align=PP_ALIGN.CENTER,
@@ -898,11 +897,11 @@ header(s, "08  综合调优成果：整体性能升级", 18)
 add_text(s, Inches(0.55), Inches(1.3), Inches(12), 0.4,
          "▍五大瓶颈调优前后对比", size=16, color=C_PRIMARY, bold=True)
 results = [
-    ("慢查询", "扫描 80万行 / 800ms", "20行 / <10ms", "↓99.7%"),
-    ("索引异常", "6类失效全表扫描", "全部命中索引", "扫描↓"),
-    ("事务死锁", "ERROR 1213 高频", "死锁 = 0", "根除"),
-    ("锁等待", "ERROR 1205 堆积", "秒级快速失败", "↓超时"),
-    ("主从延迟", "120s+ 延迟", "<5s", "↓96%"),
+    ("慢查询", "rows=20 + filesort", "rows=3 索引覆盖", "扫描↓85%\n排序消除"),
+    ("索引异常", "6类 type=ALL 全表扫描", "全部命中索引", "全表扫描\n→索引命中"),
+    ("事务死锁", "真实触发 AB-BA\nERROR 1213", "统一加锁顺序\n死锁 = 0", "根除"),
+    ("锁等待", "真实触发 ERROR 1205\n超时 5s", "分批+乐观锁\n快速失败", "超时堆积\n→秒级失败"),
+    ("主从延迟", "单线程回放\n延迟 120s+", "8线程并行\nLOGICAL_CLOCK", "120s→<5s\n↓96%"),
 ]
 cw = [1.8, 3.5, 3.5, 1.8]
 heads = ["故障", "调优前", "调优后", "改善"]
@@ -912,63 +911,70 @@ for c, h in enumerate(heads):
              Inches(0.5), h, size=14, color=C_WHITE, bold=True,
              align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 for i, (n, before, after, imp) in enumerate(results):
-    y = 2.4 + i * 0.55
-    add_rect(s, Inches(0.55), Inches(y), Inches(10.6), Inches(0.5),
+    y = 2.4 + i * 0.62
+    add_rect(s, Inches(0.55), Inches(y), Inches(10.6), Inches(0.55),
              C_LIGHT if i % 2 == 0 else C_WHITE)
-    add_text(s, Inches(0.55), Inches(y), Inches(cw[0]), Inches(0.5),
+    add_text(s, Inches(0.55), Inches(y), Inches(cw[0]), Inches(0.55),
              n, size=13, color=C_PRIMARY, bold=True, align=PP_ALIGN.CENTER,
              anchor=MSO_ANCHOR.MIDDLE)
-    add_text(s, Inches(0.55 + cw[0]), Inches(y), Inches(cw[1]), Inches(0.5),
+    add_text(s, Inches(0.55 + cw[0]), Inches(y), Inches(cw[1]), Inches(0.55),
              before, size=12, color=C_RED, align=PP_ALIGN.CENTER,
              anchor=MSO_ANCHOR.MIDDLE)
-    add_text(s, Inches(0.55 + sum(cw[:2])), Inches(y), Inches(cw[2]), Inches(0.5),
+    add_text(s, Inches(0.55 + sum(cw[:2])), Inches(y), Inches(cw[2]), Inches(0.55),
              after, size=12, color=C_GREEN, align=PP_ALIGN.CENTER,
              anchor=MSO_ANCHOR.MIDDLE)
-    add_text(s, Inches(0.55 + sum(cw[:3])), Inches(y), Inches(cw[3]), Inches(0.5),
+    add_text(s, Inches(0.55 + sum(cw[:3])), Inches(y), Inches(cw[3]), Inches(0.55),
              imp, size=13, color=C_ACCENT, bold=True, align=PP_ALIGN.CENTER,
              anchor=MSO_ANCHOR.MIDDLE)
 
-# 整体收益
+# 整体收益 KPI
 add_text(s, Inches(11.4), Inches(1.85), Inches(1.4), Inches(0.5),
          "整体收益", size=14, color=C_WHITE, bold=True, align=PP_ALIGN.CENTER,
          anchor=MSO_ANCHOR.MIDDLE)
-kpis = [("系统可用性", "99.95%→99.99%", C_GREEN),
-        ("平均响应", "350ms→28ms", C_BLUE),
-        ("死锁次数", "高频→0", C_TEAL),
-        ("延迟告警", "减少 90%", C_ACCENT)]
+kpis = [("死锁 = 0", "AB-BA 根除", C_GREEN),
+        ("rows 20→3", "索引覆盖", C_BLUE),
+        ("ERROR 1205\n已消除", "分批+乐观锁", C_TEAL),
+        ("延迟 ↓96%", "120s→<5s", C_ACCENT)]
 for i, (k, v, col) in enumerate(kpis):
-    y = 2.4 + i * 0.55
-    add_rect(s, Inches(11.4), Inches(y), Inches(1.4), Inches(0.5), C_LIGHT)
-    add_rect(s, Inches(11.4), Inches(y), Inches(0.06), Inches(0.5), col)
-    add_text(s, Inches(11.5), Inches(y), Inches(1.25), Inches(0.5),
-             v, size=10, color=col, bold=True, align=PP_ALIGN.CENTER,
+    y = 2.4 + i * 0.62
+    add_rect(s, Inches(11.4), Inches(y), Inches(1.4), Inches(0.55), C_LIGHT)
+    add_rect(s, Inches(11.4), Inches(y), Inches(0.06), Inches(0.55), col)
+    add_text(s, Inches(11.5), Inches(y + 0.02), Inches(1.25), Inches(0.3),
+             k, size=10, color=col, bold=True, align=PP_ALIGN.CENTER,
+             anchor=MSO_ANCHOR.MIDDLE)
+    add_text(s, Inches(11.5), Inches(y + 0.3), Inches(1.25), Inches(0.2),
+             v, size=8, color=C_GRAY, align=PP_ALIGN.CENTER,
              anchor=MSO_ANCHOR.MIDDLE)
 
-add_text(s, Inches(0.55), Inches(5.4), Inches(12), 0.4,
+add_text(s, Inches(0.55), Inches(5.9), Inches(12.2), 0.4,
+         "▍调优效果基于真实 MySQL 8.0 环境实测，数据库 shop_demo 含 100 万订单",
+         size=14, color=C_ACCENT, bold=True)
+footer(s)
+
+# =====================================================================
+# 18b. 调优闭环与经验沉淀
+# =====================================================================
+s = prs.slides.add_slide(BLANK)
+slide_bg(s)
+header(s, "08  调优闭环与经验沉淀", 19)
+add_text(s, Inches(0.55), Inches(1.3), Inches(12), 0.4,
          "▍全链路调优闭环：监控 → 定位 → 分析 → 调优 → 验证 → 沉淀",
          size=16, color=C_PRIMARY, bold=True)
 loop = ["监控告警", "现象定位", "根因分析", "方案调优", "效果验证", "经验沉淀"]
 for i, t in enumerate(loop):
     x = 0.9 + i * 2.1
     col = [C_BLUE, C_ACCENT, C_RED, C_TEAL, C_GREEN, C_PRIMARY][i]
-    add_rect(s, Inches(x), Inches(5.9), Inches(1.7), Inches(0.6), col)
-    add_text(s, Inches(x), Inches(5.9), Inches(1.7), Inches(0.6),
+    add_rect(s, Inches(x), Inches(1.85), Inches(1.7), Inches(0.65), col)
+    add_text(s, Inches(x), Inches(1.85), Inches(1.7), Inches(0.65),
              t, size=12, color=C_WHITE, bold=True, align=PP_ALIGN.CENTER,
              anchor=MSO_ANCHOR.MIDDLE)
     if i < 5:
         ar = s.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW,
-                                Inches(x + 1.72), Inches(6.05), Inches(0.18), Inches(0.3))
+                                Inches(x + 1.72), Inches(2.02), Inches(0.18), Inches(0.3))
         ar.fill.solid(); ar.fill.fore_color.rgb = C_GRAY
         ar.line.fill.background()
-footer(s)
 
-# =====================================================================
-# 19. 经验总结与展望
-# =====================================================================
-s = prs.slides.add_slide(BLANK)
-slide_bg(s)
-header(s, "经验总结与展望", 19)
-add_text(s, Inches(0.55), Inches(1.3), Inches(6), 0.4,
+add_text(s, Inches(0.55), Inches(3.0), Inches(6), 0.4,
          "▍核心经验沉淀", size=16, color=C_PRIMARY, bold=True)
 exp = [
     "慢查询：EXPLAIN 是第一利器，关注 type/rows/Extra 三要素",
@@ -978,10 +984,10 @@ exp = [
     "主从延迟：单线程回放是瓶颈，多线程并行复制解之",
     "共性：监控先行，定位证据，根因分析，验证闭环",
 ]
-add_bullets(s, Inches(0.55), Inches(1.8), Inches(6.2), Inches(4.5),
+add_bullets(s, Inches(0.55), Inches(3.5), Inches(6.2), Inches(2.5),
             exp, size=13, gap=10)
 
-add_text(s, Inches(7.0), Inches(1.3), Inches(5.8), 0.4,
+add_text(s, Inches(7.0), Inches(3.0), Inches(5.8), 0.4,
          "▍课程知识点整合", size=16, color=C_PRIMARY, bold=True)
 points = [
     ("索引原理", "B+树 / 回表 / 覆盖索引", C_BLUE),
@@ -991,21 +997,21 @@ points = [
     ("性能调优", "慢日志 / 并行复制 / 读写分离", C_GREEN),
 ]
 for i, (t, d, col) in enumerate(points):
-    y = 1.8 + i * 0.85
-    add_rect(s, Inches(7.0), Inches(y), Inches(5.75), Inches(0.75), C_LIGHT)
-    add_rect(s, Inches(7.0), Inches(y), Inches(0.08), Inches(0.75), col)
-    add_text(s, Inches(7.25), Inches(y + 0.08), Inches(5.4), Inches(0.35),
+    y = 3.5 + i * 0.72
+    add_rect(s, Inches(7.0), Inches(y), Inches(5.75), Inches(0.65), C_LIGHT)
+    add_rect(s, Inches(7.0), Inches(y), Inches(0.08), Inches(0.65), col)
+    add_text(s, Inches(7.25), Inches(y + 0.06), Inches(5.4), Inches(0.3),
              t, size=14, color=C_PRIMARY, bold=True)
-    add_text(s, Inches(7.25), Inches(y + 0.42), Inches(5.4), Inches(0.3),
+    add_text(s, Inches(7.25), Inches(y + 0.36), Inches(5.4), Inches(0.25),
              d, size=11, color=C_GRAY)
 
-add_text(s, Inches(0.55), Inches(6.4), Inches(12.2), 0.4,
+add_text(s, Inches(0.55), Inches(6.25), Inches(12.2), 0.4,
          "▍展望：向「可观测 + 自动化」演进 —— 慢SQL自动索引建议、智能巡检、AIOps 异常预测",
          size=14, color=C_ACCENT, bold=True)
 footer(s)
 
 # =====================================================================
-# 20. 致谢 / Q&A
+# 21. 致谢 / Q&A
 # =====================================================================
 s = prs.slides.add_slide(BLANK)
 slide_bg(s, C_DARK)
@@ -1032,7 +1038,7 @@ add_text(s, Inches(1.0), Inches(5.8), Inches(11.3), Inches(0.5),
 # =====================================================================
 # 保存
 # =====================================================================
-out = "/workspace/db_optimization_demo/ppt/全链路性能瓶颈排查与综合调优.pptx"
+out = "/workspace/db_optimization_demo/ppt/全链路性能瓶颈排查与综合调优_优化版.pptx"
 prs.save(out)
 print(f"✅ PPT 已生成: {out}")
 print(f"   共 {len(prs.slides)} 页")
