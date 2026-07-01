@@ -43,7 +43,17 @@ BLANK = prs.slide_layouts[6]
 # =====================================================================
 # 辅助函数
 # =====================================================================
+def _I(v):
+    """自动单位转换：float 和小 int 按英寸处理，大 int(>1000) 视为已转换的 EMU 值直接返回"""
+    if isinstance(v, float):
+        return Inches(v)
+    if isinstance(v, int):
+        # 1 inch = 914400 EMU; 任何 >1000 的值几乎不可能是"英寸的整数"，必然是 EMU
+        return v if v > 1000 else Inches(v)
+    return v
+
 def add_rect(slide, x, y, w, h, color, line=None):
+    x, y, w, h = _I(x), _I(y), _I(w), _I(h)
     shp = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
     shp.fill.solid()
     shp.fill.fore_color.rgb = color
@@ -57,6 +67,7 @@ def add_rect(slide, x, y, w, h, color, line=None):
 
 def add_text(slide, x, y, w, h, text, size=18, color=C_DARK, bold=False,
              font=FONT, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP, line_spacing=1.15):
+    x, y, w, h = _I(x), _I(y), _I(w), _I(h)
     tb = slide.shapes.add_textbox(x, y, w, h)
     tf = tb.text_frame
     tf.word_wrap = True
@@ -79,6 +90,7 @@ def add_text(slide, x, y, w, h, text, size=18, color=C_DARK, bold=False,
 
 def add_bullets(slide, x, y, w, h, items, size=16, color=C_DARK, gap=8):
     """items: list[str] 或 list[(text, sublevel)]"""
+    x, y, w, h = _I(x), _I(y), _I(w), _I(h)
     tb = slide.shapes.add_textbox(x, y, w, h)
     tf = tb.text_frame
     tf.word_wrap = True
@@ -102,6 +114,7 @@ def add_bullets(slide, x, y, w, h, items, size=16, color=C_DARK, gap=8):
 
 
 def add_code(slide, x, y, w, h, code, size=12):
+    x, y, w, h = _I(x), _I(y), _I(w), _I(h)
     add_rect(slide, x, y, w, h, C_CODE_BG)
     tb = slide.shapes.add_textbox(x + Inches(0.15), y + Inches(0.1),
                                   w - Inches(0.3), h - Inches(0.2))
@@ -128,7 +141,7 @@ def header(slide, title, idx=None, total=None):
     """内容页通用页头：左侧色条 + 标题 + 页码"""
     add_rect(slide, 0, 0, Inches(0.22), SH, C_ACCENT)              # 左侧竖条
     add_rect(slide, 0, 0, SW, Inches(1.05), C_PRIMARY)            # 顶部标题栏
-    add_rect(slide, Inches(0.22), Inches(1.05), SW, Inches(0.06), C_ACCENT)  # 金线
+    add_rect(slide, Inches(0.22), Inches(1.05), SW - Inches(0.22), Inches(0.06), C_ACCENT)  # 金线
     add_text(slide, Inches(0.55), Inches(0.18), Inches(11), Inches(0.7),
              title, size=26, color=C_WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
     if idx is not None:
@@ -144,6 +157,7 @@ def footer(slide):
 
 
 def card(slide, x, y, w, h, title, body, accent=C_TEAL):
+    x, y, w, h = _I(x), _I(y), _I(w), _I(h)
     add_rect(slide, x, y, w, h, C_LIGHT)
     add_rect(slide, x, y, Inches(0.08), h, accent)
     add_text(slide, x + Inches(0.25), y + Inches(0.18), w - Inches(0.4),
@@ -153,6 +167,7 @@ def card(slide, x, y, w, h, title, body, accent=C_TEAL):
 
 
 def chip(slide, x, y, w, h, text, fg=C_WHITE, bg=C_ACCENT, size=13):
+    x, y, w, h = _I(x), _I(y), _I(w), _I(h)
     shp = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h)
     shp.fill.solid(); shp.fill.fore_color.rgb = bg
     shp.line.fill.background()
