@@ -62,7 +62,7 @@ echo -e "${GREEN}  → type=range, key=idx_user_status_created, rows=1, Using in
 pause
 
 echo -e "${YELLOW}【1.3】真实耗时对比（10次采样去头尾平均）${NC}"
-python3 $SCRIPTS/user_query_bench.py 2>&1 | tail -8
+python3 $SCRIPTS/03_slow_query_bench.py 2>&1 | tail -8
 echo -e "${GREEN}✓ 实测：420ms → 0.46ms，提速 913 倍${NC}"
 pause
 
